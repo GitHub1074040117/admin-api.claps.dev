@@ -1,0 +1,11 @@
+# Editor directories and files
+.idea
+note
+infomation
+test
+
+# config files
+config
+
+#repo
+.git
