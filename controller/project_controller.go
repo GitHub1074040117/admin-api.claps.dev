@@ -2,6 +2,7 @@ package controller
 
 import (
 	"claps-admin/common"
+	"claps-admin/model"
 	"claps-admin/response"
 	"claps-admin/service"
 	"claps-admin/util"
@@ -117,7 +118,11 @@ func SendProjectInfo(ctx *gin.Context) {
 
 	// 获取项目名称
 	projectName := ctx.Param("name")
-	projectId, _ := service.GetProjectIdByName(projectName)
+	projectId, err := service.GetProjectIdByName(projectName)
+	if !util.IsOk(err) {
+		response.Fail(ctx, nil, "项目信息id获取失败！")
+		log.Panicln(err)
+	}
 	// 根据项目名称获取项目
 	project, err1 := service.GetProjectByName(projectName)
 	if !util.IsOk(err1) {
@@ -127,12 +132,22 @@ func SendProjectInfo(ctx *gin.Context) {
 	}
 
 	// 获取项目捐赠流水
-	transactions, count := service.GetProjectTransactions(projectId)
+	transactions, err := service.GetProjectTransactions(projectId)
+	if !util.IsOk(err) {
+		response.Fail(ctx, nil, err.Message)
+		log.Panicln(err)
+	}
+	if *transactions == nil {
+		response.Success(ctx, gin.H{
+			"Project":      *project,
+			"Transactions": [0]model.TransactionDto{},
+		}, "捐赠流水获取成功！")
+		return
+	}
 
 	response.Success(ctx, gin.H{
 		"Project":      *project,
 		"Transactions": *transactions,
-		"Count":        count,
 	}, "项目信息获取成功")
 }
 

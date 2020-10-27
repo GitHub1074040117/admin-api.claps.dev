@@ -117,6 +117,7 @@ func InitAdmin() {
 
 	if IsAdminExist(superAdmin.Email) {
 		fmt.Println("高级用户已经存在！")
+		DB.Model(&superAdmin).Update("role", model.Super)
 	} else {
 		fmt.Println("高级用户不存在！已经创建")
 		DB.Create(&superAdmin)

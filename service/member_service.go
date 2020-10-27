@@ -22,7 +22,9 @@ func CreateMembers(members interface{}, projectName string) *util.Err {
 		if !util.IsOk(err) {
 			log.Panicln("项目id查找失败!")
 		}
-		DB.Create(&member)
+		if !IsMemberExist(member.ProjectId, member.UserId) {
+			DB.Create(&member)
+		}
 	}
 	return util.Success()
 }
@@ -84,4 +86,15 @@ func DeleteMember(userId int64, projectId int64) *util.Err {
 	db.Where("project_id = ? AND user_id = ?", projectId, userId).Delete(&memberWallet)
 
 	return util.Success()
+}
+
+// 判断成员是否存在
+func IsMemberExist(projectId int64, userId int64) bool {
+	var member model.Member
+	db := common.GetDB()
+	db.Where("project_id = ? AND user_id = ?", projectId, userId).First(&member)
+	if member.ProjectId == 0 {
+		return false
+	}
+	return true
 }

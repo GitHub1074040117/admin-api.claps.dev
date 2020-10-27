@@ -23,3 +23,14 @@ type Transfer struct {
 	//0是用户点击提现后(提现操作未完成) 1机器人完成提现
 	CreatedAt time.Time `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
 }
+
+type TransferDto struct {
+	BotId      string          `json:"bot_id,omitempty"`
+	SnapshotId string          `json:"snapshot_id,omitempty"`
+	User       string          `json:"user,omitempty"`
+	TraceId    string          `json:"trace_id,omitempty"`
+	Asset      string          `json:"asset,omitempty"`
+	Amount     decimal.Decimal `json:"amount,omitempty"`
+	Memo       string          `json:"memo,omitempty"`
+	CreatedAt  time.Time       `json:"created_at,omitempty"`
+}

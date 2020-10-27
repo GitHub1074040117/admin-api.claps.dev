@@ -87,6 +87,17 @@ func GetProjectIdByName(name string) (int64, *util.Err) {
 	return project.Id, util.Success()
 }
 
+// 按照项目mericoId获取项目
+func GetProjectIdByMericoId(mericoGroupId string) int64 {
+	var group model.ProjectToMericoGroup
+	db := common.GetDB()
+	if err := db.Where("merico_group_id = ?", mericoGroupId).First(&group); err != nil {
+		log.Println(err)
+		return 0
+	}
+	return group.ProjectId
+}
+
 // 按项目id返回项目指针
 func GetProjectById(projectId int64) (*model.Project, *util.Err) {
 	db := common.GetDB()
@@ -107,6 +118,21 @@ func GetProjectByName(projectName string) (*model.Project, *util.Err) {
 		return &project, util.Fail("查找不到该项目名称")
 	}
 	return &project, util.Success()
+}
+
+// 按项目merico的id获取项目
+func GetProjectByMericoId(mericoGroupId string) (*model.Project, *util.Err) {
+	projectId := GetProjectIdByMericoId(mericoGroupId)
+	if projectId == 0 {
+		log.Println("获取失败，获取到的项目id为0")
+		return nil, util.Fail("获取失败，获取到的项目id为0")
+	}
+	project, err := GetProjectById(projectId)
+	if !util.IsOk(err) {
+		log.Println("获取项目失败！")
+		return nil, util.Fail("获取项目失败！")
+	}
+	return project, util.Success()
 }
 
 // 按用户id获取项目数组
