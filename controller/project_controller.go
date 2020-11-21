@@ -219,7 +219,9 @@ func DeleteProject(ctx *gin.Context) {
 	}
 
 	// 删除项目受捐记录
-	// ...
-
+	if err := service.DeleteTransaction(projectId); !util.IsOk(err) {
+		response.Success(ctx, nil, err.Message)
+		log.Panicln(err)
+	}
 	response.Success(ctx, nil, "删除项目成功！")
 }
