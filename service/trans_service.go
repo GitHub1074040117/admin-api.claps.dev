@@ -18,7 +18,9 @@ func GetProjectTransactions(projectId int64) (*[]model.TransactionDto, *util.Err
 	}
 	for _, tran := range transactions {
 		var tranDto *model.TransactionDto
-		tranDto = toTransactionDto(&tran)
+		if tranDto = toTransactionDto(&tran); tranDto == nil {
+			continue
+		}
 		tranDtos = append(tranDtos, *tranDto)
 	}
 	return &tranDtos, util.Success()
@@ -39,7 +41,9 @@ func GetAllTransactions() (*[]model.TransactionDto, *util.Err) {
 	}
 	for _, tran := range transactions {
 		var tranDto *model.TransactionDto
-		tranDto = toTransactionDto(&tran)
+		if tranDto = toTransactionDto(&tran); tranDto == nil {
+			continue
+		}
 		tranDtos = append(tranDtos, *tranDto)
 	}
 	return &tranDtos, util.Success()
@@ -72,7 +76,7 @@ func GetUserTransfers(mixinId string) (*[]model.Transfer, int, *util.Err) {
 	db.Where("mixin_id = ?", mixinId).Find(&transfers)
 	count := len(transfers)
 	if count == 0 {
-		log.Panicln("未查找到该用户的提现记录")
+		log.Println("未查找到该用户的提现记录", mixinId)
 	}
 	return &transfers, count, util.Success()
 }
@@ -97,12 +101,6 @@ func toTransactionDto(transaction *model.Transaction) *model.TransactionDto {
 	if !util.IsOk(err) {
 		return nil
 	}
-
-	/*receiver, err := GetProjectByMericoId(transaction.Receiver)
-	if !util.IsOk(err) {
-		log.Println("由mericoId获取项目失败！")
-	}
-	fmt.Println(receiver)*/
 
 	transactionDto.Id = transaction.Id
 	transactionDto.ProjectAvatar = project.AvatarUrl

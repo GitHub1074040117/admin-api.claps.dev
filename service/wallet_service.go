@@ -71,7 +71,7 @@ func CreateMemberWallets(db *gorm.DB, projectId int64) *util.Err {
 	// n个成员生成n*8条记录
 	for i := 0; i < len(*members); i++ {
 		for j := 0; j < AssetType; j++ {
-			if IsMemberWalletExisted(projectId, (*members)[i].Id) {
+			if IsMemberWalletExisted(projectId, (*members)[i].Id, assets[j]) {
 				continue
 			}
 			memberWallet0, err := createMemberWallet((*members)[i].Id, projectId, model.PersperAlgorithm, assets[j])
@@ -163,11 +163,11 @@ func GetDistributionByProjectId(projectId int64) string {
 	return bot.Distribution
 }
 
-// 根据项目id和用户id查找成员钱包是否存在
-func IsMemberWalletExisted(projectId int64, userId int64) bool {
+// 根据项目id和用户id和币种查找成员钱包是否存在
+func IsMemberWalletExisted(projectId int64, userId int64, assertId string) bool {
 	db := common.GetDB()
 	var mw model.MemberWallet
-	db.Where("project_id = ? AND user_id = ?", projectId, userId).First(&mw)
+	db.Where("project_id = ? AND user_id = ? AND asset_id = ?", projectId, userId, assertId).First(&mw)
 	if mw.ProjectId == 0 {
 		return false
 	}

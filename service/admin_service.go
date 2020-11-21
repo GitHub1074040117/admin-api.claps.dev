@@ -80,11 +80,15 @@ func CreateAdmins(admins interface{}) *util.Err {
 		if user, err = GetUserById(admin.UserId); !util.IsOk(err) {
 			log.Panicln("根据用户id获取用户失败！")
 		}
+		// 检查用户是否已经是管理员
+		if IsAdminExist(admin.Name) {
+			return util.Success()
+		}
 		admin.Name = user.Name
 		admin.MixinId = user.MixinId
 		admin.AvatarUrl = user.AvatarUrl
 		admin.Role = model.Common
-		admin.Email = user.Email
+		admin.Email = user.Name
 		if err1 := DB.Create(&admin).Error; err1 != nil {
 			log.Panicln(err1)
 		}

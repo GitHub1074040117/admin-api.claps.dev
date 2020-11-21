@@ -37,7 +37,7 @@ func AddNewProject(ctx *gin.Context) {
 
 	// 添加项目
 	if projectId, err = service.CreateProject(projectName, description, avatarUrl); !util.IsOk(err) {
-		response.Fail(ctx, nil, "项目添加失败！")
+		response.Fail(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
@@ -51,7 +51,7 @@ func AddNewProject(ctx *gin.Context) {
 
 	// 添加仓库
 	if _, err = service.CreateRepository(projectId, repoType, repoUrl, repoName); !util.IsOk(err) {
-		response.Fail(ctx, nil, "添加项目失败！添加仓库失败！")
+		response.Fail(ctx, nil, err.Message)
 		// 添加失败删除项目
 		service.DeleteProjectById(projectId)
 		log.Panicln(err.Message)
@@ -120,13 +120,13 @@ func SendProjectInfo(ctx *gin.Context) {
 	projectName := ctx.Param("name")
 	projectId, err := service.GetProjectIdByName(projectName)
 	if !util.IsOk(err) {
-		response.Fail(ctx, nil, "项目信息id获取失败！")
+		response.Fail(ctx, nil, "项目信息id获取失败！"+err.Message)
 		log.Panicln(err)
 	}
 	// 根据项目名称获取项目
 	project, err1 := service.GetProjectByName(projectName)
 	if !util.IsOk(err1) {
-		response.Fail(ctx, nil, "项目信息获取失败！")
+		response.Fail(ctx, nil, "项目信息获取失败！"+err.Message)
 		log.Println("项目信息获取失败！")
 		return
 	}
@@ -178,43 +178,43 @@ func DeleteProject(ctx *gin.Context) {
 	DB = common.GetDB()
 	projectId, err := service.GetProjectIdByName(ctx.Param("name"))
 	if !util.IsOk(err) {
-		response.Fail(ctx, nil, "项目id获取失败！")
+		response.Success(ctx, nil, "项目id获取失败！")
 		log.Panicln(err)
 	}
 
 	// 删除项目
 	if err := service.DeleteProjectById(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
 	// 删除项目成员
 	if err := service.DeleteAllProjectMembers(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
 	// 删除项目仓库
 	if err := service.DeleteProjectRepos(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
 	// 删除项目钱包
 	if err := service.DeleteProjectWallets(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
 	// 删除成员钱包
 	if err := service.DeleteMemberWallets(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
 	// 删除项目机器人
 	if err := service.DeleteProjectBots(projectId); !util.IsOk(err) {
-		response.Fail(ctx, nil, err.Message)
+		response.Success(ctx, nil, err.Message)
 		log.Panicln(err)
 	}
 
