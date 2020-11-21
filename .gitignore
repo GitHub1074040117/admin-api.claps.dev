@@ -5,7 +5,8 @@ infomation
 test
 
 # config files
-config
+config/application.yml
+config/keystore-7000103520.json
 
 #repo
 .git

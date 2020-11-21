@@ -48,11 +48,17 @@ func SendAllTransfers(ctx *gin.Context) {
 	transfers, err := service.GetAllTransfers()
 	if !util.IsOk(err) {
 		response.Fail(ctx, nil, "获取提现流水失败！")
-		return
+		log.Panicln(err.Message)
 	}
-	response.Success(ctx, gin.H{
-		"Transfers": transfers,
-	}, "获取体现流水成功！")
+	if *transfers == nil {
+		response.Success(ctx, gin.H{
+			"Transfer": [0]model.TransferDto{},
+		}, "提现流水获取成功！")
+	} else {
+		response.Success(ctx, gin.H{
+			"Transfers": transfers,
+		}, "提现流水获取成功！")
+	}
 }
 
 // 发送某个用户的提现记录

@@ -6,6 +6,7 @@ import (
 	"claps-admin/model"
 	"claps-admin/util"
 	"log"
+	"regexp"
 )
 
 const GithubUrl = "https://github.com/"
@@ -16,6 +17,12 @@ const BITBUCKET = "BITBUCKET"
 
 // 创建仓库添加到数据库中，返回repoId
 func CreateRepository(projectId int64, repoType string, repoUrl string, repoName string) (int64, *util.Err) {
+	// 首先检查url与urlType是否匹配
+	if !checkRepoUrlValidation(repoUrl, repoType) {
+		log.Println("repoService/CreateRepository: 仓库url与仓库type不匹配!")
+		return 0, util.Fail("仓库url与仓库type不匹配！")
+	}
+
 	DB := common.GetDB()
 	var newRepo model.Repository
 	var ptm model.ProjectToMericoGroup
@@ -141,4 +148,14 @@ func repoIdToMericoId(repoId int64) string {
 		return ""
 	}
 	return repoMerico.MericoProjectId
+}
+
+// 检查仓库url于urlType是否匹配
+func checkRepoUrlValidation(url string, urlType string) bool {
+	switch urlType {
+	case "GITHUB":
+		rp := regexp.MustCompile(`^https://github\.com/.*`)
+		return rp.MatchString(url)
+	}
+	return false
 }

@@ -32,13 +32,15 @@ func CreateProject(projectName string, description string, avatarUrl string) (in
 	// 获取父组id
 	parentGroupId, err := merico.GetGroupIdByName(RootGroup)
 	if !util.IsOk(err) {
-		log.Println("获取parentGroupId出错！" + err.Message)
+		log.Println("projectService/CreateProject:获取parentGroupId出错！" + err.Message)
+		DeleteProjectById(newProject.Id)
 		return 0, util.Fail(err.Message)
 	}
 	// 添加子组
 	groupId, err := merico.AddGroup(projectName, description, parentGroupId)
 	if !util.IsOk(err) {
 		log.Println("获取添加子组时出错！" + err.Message)
+		DeleteProjectById(newProject.Id)
 		return 0, util.Fail(err.Message)
 	}
 
@@ -82,9 +84,20 @@ func GetProjectIdByName(name string) (int64, *util.Err) {
 	var project model.Project
 	db.Where("name = ?", name).First(&project)
 	if project.Id == 0 {
-		log.Panicln("查找不到该项目：", name)
+		log.Println("projectService/GetProjectIdByName: 查找不到该项目：", name)
 	}
 	return project.Id, util.Success()
+}
+
+// 按照项目mericoId获取项目
+func GetProjectIdByMericoId(mericoGroupId string) int64 {
+	var group model.ProjectToMericoGroup
+	db := common.GetDB()
+	if err := db.Where("merico_group_id = ?", mericoGroupId).First(&group); err != nil {
+		log.Println(err)
+		return 0
+	}
+	return group.ProjectId
 }
 
 // 按项目id返回项目指针
@@ -93,6 +106,7 @@ func GetProjectById(projectId int64) (*model.Project, *util.Err) {
 	var project model.Project
 	db.Where("id = ?", projectId).First(&project)
 	if project.Id == 0 {
+		log.Println("projectService/GetProjectById: 查找不到该项目id")
 		return &project, util.Fail("查找不到该项目id")
 	}
 	return &project, util.Success()
@@ -104,9 +118,25 @@ func GetProjectByName(projectName string) (*model.Project, *util.Err) {
 	var project model.Project
 	db.Where("name = ?", projectName).First(&project)
 	if project.Id == 0 {
+		log.Println("projectService/GetProjectByName: 查找不到该项目名称")
 		return &project, util.Fail("查找不到该项目名称")
 	}
 	return &project, util.Success()
+}
+
+// 按项目merico的id获取项目
+func GetProjectByMericoId(mericoGroupId string) (*model.Project, *util.Err) {
+	projectId := GetProjectIdByMericoId(mericoGroupId)
+	if projectId == 0 {
+		log.Println("获取失败，获取到的项目id为0")
+		return nil, util.Fail("获取失败，获取到的项目id为0")
+	}
+	project, err := GetProjectById(projectId)
+	if !util.IsOk(err) {
+		log.Println("获取项目失败！")
+		return nil, util.Fail("获取项目失败！")
+	}
+	return project, util.Success()
 }
 
 // 按用户id获取项目数组
@@ -156,7 +186,7 @@ func DeleteProjectById(projectId int64) *util.Err {
 	// 检查项目是否存在
 	db := common.GetDB()
 	if !IsProjectExistById(projectId) {
-		fmt.Println("删除失败！项目不存在！")
+		fmt.Println("projectService/DeleteProjectById: 删除失败！项目不存在！")
 		return util.Fail("删除失败！项目不存在！")
 	}
 	// 删除
@@ -164,7 +194,7 @@ func DeleteProjectById(projectId int64) *util.Err {
 	var ptm model.ProjectToMericoGroup
 	db.Where("project_id = ?", projectId).First(&ptm)
 	if len(ptm.MericoGroupId) == 0 {
-		log.Println("项目merico组id不存在！")
+		log.Println("projectService/DeleteProjectById: 项目merico组id不存在！")
 		return util.Fail("项目merico组id不存在！")
 	}
 	groupId := ptm.MericoGroupId
@@ -183,7 +213,7 @@ func UpdateProjectInfo(projectName string, editedName string, avatarUrl string, 
 	db := common.GetDB()
 	project, err := GetProjectByName(projectName)
 	if !util.IsOk(err) {
-		log.Println("项目信息更新失败！", err)
+		log.Println("projectService/UpdateProjectInfo: 项目信息更新失败！", err)
 		return util.Fail("项目信息更新失败！")
 	}
 	if len(editedName) != 0 {

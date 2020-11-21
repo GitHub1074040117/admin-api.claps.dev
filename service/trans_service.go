@@ -8,12 +8,22 @@ import (
 )
 
 // 从数据库中获取某个项目的捐赠流水
-func GetProjectTransactions(projectId int64) (*[]model.Transaction, int) {
+func GetProjectTransactions(projectId int64) (*[]model.TransactionDto, *util.Err) {
 	db := common.GetDB()
 	var transactions []model.Transaction
-	db.Where("project_id = ?", projectId).Find(&transactions)
-	count := len(transactions)
-	return &transactions, count
+	var tranDtos []model.TransactionDto
+	if err := db.Where("project_id = ?", projectId).Find(&transactions).Error; err != nil {
+		log.Println(err)
+		return &tranDtos, util.Fail("查询数据库出错！")
+	}
+	for _, tran := range transactions {
+		var tranDto *model.TransactionDto
+		if tranDto = toTransactionDto(&tran); tranDto == nil {
+			continue
+		}
+		tranDtos = append(tranDtos, *tranDto)
+	}
+	return &tranDtos, util.Success()
 }
 
 // 获取所有项目的捐赠流水
@@ -22,7 +32,8 @@ func GetAllTransactions() (*[]model.TransactionDto, *util.Err) {
 	var transactions []model.Transaction
 	DB := common.GetDB()
 	if err := DB.Find(&transactions).Error; err != nil {
-		log.Panicln(err)
+		log.Println(err)
+		return &tranDtos, util.Fail(err.Error())
 	}
 	if len(transactions) == 0 {
 		log.Println("捐赠流水为空")
@@ -30,20 +41,32 @@ func GetAllTransactions() (*[]model.TransactionDto, *util.Err) {
 	}
 	for _, tran := range transactions {
 		var tranDto *model.TransactionDto
-		tranDto = toTransactionDto(&tran)
+		if tranDto = toTransactionDto(&tran); tranDto == nil {
+			continue
+		}
 		tranDtos = append(tranDtos, *tranDto)
 	}
 	return &tranDtos, util.Success()
 }
 
 // 获取所有用户提现记录
-func GetAllTransfers() (*[]model.Transfer, *util.Err) {
+func GetAllTransfers() (*[]model.TransferDto, *util.Err) {
 	var transfers []model.Transfer
+	var tranDtos []model.TransferDto
 	DB := common.GetDB()
 	if err := DB.Find(&transfers).Error; err != nil {
 		log.Panicln(err)
 	}
-	return &transfers, util.Success()
+	if len(transfers) == 0 {
+		log.Println("提现记录为空")
+		return &tranDtos, util.Success()
+	}
+	for _, tran := range transfers {
+		var tranDto *model.TransferDto
+		tranDto = ToTransferDto(&tran)
+		tranDtos = append(tranDtos, *tranDto)
+	}
+	return &tranDtos, util.Success()
 }
 
 // 从数据库中获取某个用户的提现记录
@@ -53,7 +76,7 @@ func GetUserTransfers(mixinId string) (*[]model.Transfer, int, *util.Err) {
 	db.Where("mixin_id = ?", mixinId).Find(&transfers)
 	count := len(transfers)
 	if count == 0 {
-		log.Panicln("未查找到该用户的提现记录")
+		log.Println("未查找到该用户的提现记录", mixinId)
 	}
 	return &transfers, count, util.Success()
 }
@@ -91,20 +114,25 @@ func toTransactionDto(transaction *model.Transaction) *model.TransactionDto {
 	return &transactionDto
 }
 
-/*// 将transfer转化成transferDto
-func ToTransferDto(transfer *model.Transfer) (*model.TransferDto, *util.Err) {
-	DB := common.GetDB()
+// 将transfer转化成transferDto
+func ToTransferDto(transfer *model.Transfer) *model.TransferDto {
 	var transferDto model.TransferDto
-	user, err := GetUserByMixinId(DB, transfer.MixinId)
+	user, err := GetUserByMixinId(transfer.MixinId)
 	if !util.IsOk(err) {
-		return &transferDto, err
+		log.Println(err)
+		return &transferDto
 	}
-	transferDto.UserId = user.Id
-	transferDto.AvatarUrl = user.AvatarUrl
-	transferDto.Name = user.Name
-	transferDto.Email = user.Email
-	transferDto.MixinId = user.MixinId
-	transferDto.Total = transfer.Amount
-	transferDto.Withdraws = 1
-	return &transferDto, util.Success()
-}*/
+	asset, err := GetAssetById(transfer.AssetId)
+	if !util.IsOk(err) {
+		log.Println("获取assetID出错！")
+		return &transferDto
+	}
+	transferDto.User = user.Name
+	transferDto.Asset = asset.Name
+	transferDto.Amount = transfer.Amount
+	transferDto.CreatedAt = transfer.CreatedAt
+	transferDto.Memo = transfer.Memo
+	transferDto.SnapshotId = transfer.SnapshotId
+	transferDto.TraceId = transfer.TraceId
+	return &transferDto
+}

@@ -18,8 +18,8 @@ type Claims struct {
 
 // 创建管理员Token
 func ReleaseToken(admin model.Admin) (string, *util.Err) {
-	// 1天后过期
-	expirationTime := time.Now().Add(1 * 24 * time.Hour)
+	// 30天后过期
+	expirationTime := time.Now().Add(30 * 24 * time.Hour)
 
 	//记录在token里面的相关信息
 	claims := &Claims{

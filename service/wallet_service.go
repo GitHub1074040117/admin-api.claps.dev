@@ -4,6 +4,7 @@ import (
 	"claps-admin/common"
 	"claps-admin/model"
 	"claps-admin/util"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"log"
 	"time"
@@ -70,13 +71,14 @@ func CreateMemberWallets(db *gorm.DB, projectId int64) *util.Err {
 	// n个成员生成n*8条记录
 	for i := 0; i < len(*members); i++ {
 		for j := 0; j < AssetType; j++ {
-			/*if IsMemberWalletExisted(projectId, (*members)[i].Id) {
+			if IsMemberWalletExisted(projectId, (*members)[i].Id, assets[j]) {
 				continue
-			}*/
+			}
 			memberWallet0, err := createMemberWallet((*members)[i].Id, projectId, model.PersperAlgorithm, assets[j])
 			if !util.IsOk(err) {
 				log.Panicln("成员钱包创建失败！", err)
 			}
+			fmt.Println(memberWallet0.UserId, " ", memberWallet0.ProjectId)
 			if err := db.Create(memberWallet0).Error; err != nil {
 				log.Panicln(err)
 			}
@@ -159,4 +161,15 @@ func GetDistributionByProjectId(projectId int64) string {
 		log.Panicln(err)
 	}
 	return bot.Distribution
+}
+
+// 根据项目id和用户id和币种查找成员钱包是否存在
+func IsMemberWalletExisted(projectId int64, userId int64, assertId string) bool {
+	db := common.GetDB()
+	var mw model.MemberWallet
+	db.Where("project_id = ? AND user_id = ? AND asset_id = ?", projectId, userId, assertId).First(&mw)
+	if mw.ProjectId == 0 {
+		return false
+	}
+	return true
 }
