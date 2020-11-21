@@ -136,3 +136,10 @@ func ToTransferDto(transfer *model.Transfer) *model.TransferDto {
 	transferDto.TraceId = transfer.TraceId
 	return &transferDto
 }
+
+// 删除某个项目的捐赠流水
+func DeleteTransaction(projectId int64) *util.Err {
+	db := common.GetDB()
+	db.Where("project_id = ?", projectId).Delete(&model.Transaction{})
+	return util.Success()
+}
